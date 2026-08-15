@@ -30,6 +30,10 @@ const getRevenueDashboard = async (req, res) => {
     let monthlyRevenue = 0;
     let yearlyRevenue = 0;
 
+    let monthlyExpenseAmount = 0;
+    let totalPocketCount = 0;
+    let monthlySalesCount = 0;
+
     let todaysShopSalesAmount = 0;
     let todaysOtherSalesAmount = 0;
     let todaysExpenseAmount = 0;
@@ -37,6 +41,7 @@ const getRevenueDashboard = async (req, res) => {
     shopSales.forEach(sale => {
       totalShopSalesAmount += sale.totalAmount;
       totalPendingCollection += sale.pendingAmount;
+      totalPocketCount += sale.pocketCount;
 
       const saleDate = moment(sale.salesDate);
       if (saleDate.isSameOrAfter(today)) {
@@ -44,13 +49,17 @@ const getRevenueDashboard = async (req, res) => {
         todaysShopSalesAmount += sale.totalAmount;
       }
       if (saleDate.isSameOrAfter(thisWeek)) weeklyRevenue += sale.totalAmount;
-      if (saleDate.isSameOrAfter(thisMonth)) monthlyRevenue += sale.totalAmount;
+      if (saleDate.isSameOrAfter(thisMonth)) {
+        monthlyRevenue += sale.totalAmount;
+        monthlySalesCount += 1;
+      }
       if (saleDate.isSameOrAfter(thisYear)) yearlyRevenue += sale.totalAmount;
     });
 
     otherSales.forEach(sale => {
       totalOtherSalesAmount += sale.totalAmount;
       totalPendingCollection += sale.pendingAmount;
+      totalPocketCount += sale.pocketCount;
 
       const saleDate = moment(sale.date);
       if (saleDate.isSameOrAfter(today)) {
@@ -58,7 +67,10 @@ const getRevenueDashboard = async (req, res) => {
         todaysOtherSalesAmount += sale.totalAmount;
       }
       if (saleDate.isSameOrAfter(thisWeek)) weeklyRevenue += sale.totalAmount;
-      if (saleDate.isSameOrAfter(thisMonth)) monthlyRevenue += sale.totalAmount;
+      if (saleDate.isSameOrAfter(thisMonth)) {
+        monthlyRevenue += sale.totalAmount;
+        monthlySalesCount += 1;
+      }
       if (saleDate.isSameOrAfter(thisYear)) yearlyRevenue += sale.totalAmount;
     });
 
@@ -67,6 +79,7 @@ const getRevenueDashboard = async (req, res) => {
 
       const expDate = moment(exp.date);
       if (expDate.isSameOrAfter(today)) todaysExpenseAmount += exp.amount;
+      if (expDate.isSameOrAfter(thisMonth)) monthlyExpenseAmount += exp.amount;
     });
 
     // Today's flour production
@@ -91,7 +104,13 @@ const getRevenueDashboard = async (req, res) => {
       netProfit,
       totalSales: totalSalesAmount,
       totalExpense: totalExpenseAmount,
-      pendingCollection: totalPendingCollection
+      pendingCollection: totalPendingCollection,
+      
+      // New metrics requested
+      totalPocketCount,
+      monthlyExpenseAmount,
+      monthlyProfit: monthlyRevenue - monthlyExpenseAmount,
+      monthlySalesCount
     });
 
   } catch (error) {

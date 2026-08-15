@@ -1,146 +1,220 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
+import '../providers/auth_provider.dart';
+import '../core/constants/api_constants.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  bool _isLoading = true;
+  final Dio _dio = Dio();
+  Map<String, dynamic>? _dashboardData;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDashboardData();
+  }
+
+  Future<void> _fetchDashboardData() async {
+    setState(() => _isLoading = true);
+    try {
+      final token = Provider.of<AuthProvider>(context, listen: false).token;
+      final response = await _dio.get(
+        '${ApiConstants.baseUrl}${ApiConstants.revenue}',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _dashboardData = response.data;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load dashboard: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.blue.shade900,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          'Overview',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.account_circle),
-            onPressed: () {},
-          )
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top greeting banner
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24.0),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade900,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Welcome back,',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.blue.shade200,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Admin User',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-            
-            // Transform to overlap the banner
-            Transform.translate(
-              offset: const Offset(0, -40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Text(
-                      'Stock Summary',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
+          : RefreshIndicator(
+              onRefresh: _fetchDashboardData,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top greeting banner
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(left: 24.0, right: 24.0, bottom: 48.0, top: 16.0),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1E3A8A),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(32),
+                          bottomRight: Radius.circular(32),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x401E3A8A),
+                            blurRadius: 16,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome back,',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.blue.shade100,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Admin User',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 200,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      clipBehavior: Clip.none,
-                      children: [
-                        _buildSummaryCard('Rice (Kg)', '1,200', Colors.blue.shade700, Icons.inventory_2),
-                        const SizedBox(width: 16),
-                        _buildSummaryCard('Plant (Kg)', '500', Colors.teal.shade600, Icons.eco),
-                        const SizedBox(width: 16),
-                        _buildSummaryCard('Flour (Kg)', '850', Colors.orange.shade700, Icons.takeout_dining),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Quick Actions',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.blueGrey.shade900,
-                      letterSpacing: 0.2,
+                    Transform.translate(
+                      offset: const Offset(0, -40),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 24.0),
+                            child: Text(
+                              'Overall Performance',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 200,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                              clipBehavior: Clip.none,
+                              children: [
+                                _buildSummaryCard(
+                                  'Total Revenue',
+                                  '₹${(_dashboardData?['totalSales'] ?? 0).toStringAsFixed(0)}',
+                                  Colors.blue.shade700,
+                                  Icons.account_balance_wallet,
+                                ),
+                                const SizedBox(width: 16),
+                                _buildSummaryCard(
+                                  'Net Profit',
+                                  '₹${(_dashboardData?['netProfit'] ?? 0).toStringAsFixed(0)}',
+                                  Colors.green.shade600,
+                                  Icons.trending_up,
+                                ),
+                                const SizedBox(width: 16),
+                                _buildSummaryCard(
+                                  'Total Pockets Sold',
+                                  '${_dashboardData?['totalPocketCount'] ?? 0}',
+                                  Colors.orange.shade700,
+                                  Icons.shopping_bag,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: [
-                      _buildQuickAction(context, 'Add Stock', Icons.add_box, Colors.indigo),
-                      _buildQuickAction(context, 'New Sale', Icons.point_of_sale, Colors.purple),
-                      _buildQuickAction(context, 'Reports', Icons.bar_chart, Colors.pink),
-                      _buildQuickAction(context, 'Settings', Icons.settings, Colors.blueGrey),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
-                ],
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Monthly Overview',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.blueGrey.shade900,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildMonthlyCard(
+                                  'Monthly Revenue',
+                                  '₹${(_dashboardData?['monthlyRevenue'] ?? 0).toStringAsFixed(0)}',
+                                  Icons.monetization_on,
+                                  Colors.teal,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildMonthlyCard(
+                                  'Monthly Profit',
+                                  '₹${(_dashboardData?['monthlyProfit'] ?? 0).toStringAsFixed(0)}',
+                                  Icons.savings,
+                                  Colors.indigo,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildMonthlyCard(
+                            'Monthly Number of Sales',
+                            '${_dashboardData?['monthlySalesCount'] ?? 0} Transactions',
+                            Icons.receipt_long,
+                            Colors.purple,
+                            isFullWidth: true,
+                          ),
+                          const SizedBox(height: 40),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
   Widget _buildSummaryCard(String title, String value, Color color, IconData icon) {
     return Container(
-      width: 160,
+      width: 170,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -167,19 +241,23 @@ class DashboardScreen extends StatelessWidget {
               child: Icon(icon, color: color, size: 28),
             ),
             const Spacer(),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-                color: Colors.blueGrey.shade900,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.blueGrey.shade900,
+                ),
               ),
             ),
             const SizedBox(height: 4),
             Text(
               title,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Colors.blueGrey.shade400,
               ),
@@ -190,15 +268,14 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickAction(BuildContext context, String title, IconData icon, MaterialColor color) {
-    final width = (MediaQuery.of(context).size.width - 48 - 16) / 2; // 2 columns with padding
-
+  Widget _buildMonthlyCard(String title, String value, IconData icon, MaterialColor color, {bool isFullWidth = false}) {
     return Container(
-      width: width,
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -207,38 +284,43 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {},
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.shade50,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color.shade600, size: isFullWidth ? 32 : 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: color.shade50,
-                    shape: BoxShape.circle,
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: isFullWidth ? 24 : 20,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.blueGrey.shade900,
                   ),
-                  child: Icon(icon, color: color.shade600, size: 30),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 4),
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.blueGrey.shade800,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blueGrey.shade500,
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
