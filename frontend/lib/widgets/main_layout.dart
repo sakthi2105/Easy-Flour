@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class MainLayout extends StatelessWidget {
   final Widget child;
@@ -21,8 +23,14 @@ class MainLayout extends StatelessWidget {
 
     final isDashboard = location == '/dashboard';
 
-    return Scaffold(
-      appBar: AppBar(
+    return PopScope(
+      canPop: isDashboard,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        context.go('/dashboard');
+      },
+      child: Scaffold(
+        appBar: AppBar(
         elevation: 0,
         backgroundColor: isDashboard ? const Color(0xFF1E3A8A) : Colors.blue.shade900,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -46,6 +54,7 @@ class MainLayout extends StatelessWidget {
         ] : null,
       ),
       drawer: Drawer(
+        backgroundColor: Colors.white,
         child: Column(
           children: [
             Container(
@@ -173,7 +182,33 @@ class MainLayout extends StatelessWidget {
                 title: 'Logout',
                 isSelected: false,
                 onTap: () {
-                  context.go('/login');
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext dialogContext) {
+                      return AlertDialog(
+                        title: const Text('Logout Confirmation'),
+                        content: const Text('Are you sure you want to logout?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(dialogContext).pop();
+                              Provider.of<AuthProvider>(context, listen: false).logout();
+                              context.go('/login');
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade600,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Logout'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
                 },
               ),
             ),
@@ -181,7 +216,7 @@ class MainLayout extends StatelessWidget {
         ),
       ),
       body: child,
-    );
+    ));
   }
 
   Widget _buildDrawerItem({
