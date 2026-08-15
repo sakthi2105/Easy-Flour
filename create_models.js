@@ -114,5 +114,5 @@ module.exports = mongoose.model('StockSummary', stockSummarySchema);`
 
 for (const [filename, content] of Object.entries(models)) {
   fs.writeFileSync(path.join(modelsDir, filename), content);
-  console.log(\`Created \${filename}\`);
+  console.log(`Created ${filename}`);
 }
