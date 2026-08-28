@@ -1,7 +1,14 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class ApiConstants {
   // Use 10.0.2.2 for Android Emulator connecting to localhost
   // Or your local IP address for real devices (e.g. 192.168.1.5)
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
+  // Read URL exclusively from .env for better security
+  static String get baseUrl {
+    final url = dotenv.env['API_BASE_URL'];
+    if (url == null) throw Exception('API_BASE_URL not found in .env');
+    return url;
+  }
   
   static const String login = '/login';
   static const String riceStock = '/rice';
