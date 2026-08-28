@@ -3,7 +3,7 @@ const { updateStockSummary } = require('../utils/stockHelper');
 
 const getShopSales = async (req, res) => {
   try {
-    const sales = await ShopSales.find().sort({ salesDate: -1 });
+    const sales = await ShopSales.find({ admin: req.admin._id }).sort({ salesDate: -1 });
     res.json(sales);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -17,6 +17,7 @@ const createShopSale = async (req, res) => {
     const pendingAmount = totalAmount - (collectionReceived || 0);
 
     const sale = await ShopSales.create({
+      admin: req.admin._id,
       ...rest,
       pocketCount,
       pocketPrice,
@@ -40,7 +41,7 @@ const createShopSale = async (req, res) => {
 
 const updateShopSale = async (req, res) => {
   try {
-    const oldSale = await ShopSales.findById(req.params.id);
+    const oldSale = await ShopSales.findOne({ _id: req.params.id, admin: req.admin._id });
     if (!oldSale) return res.status(404).json({ message: 'Sale not found' });
 
     let { pocketCount, pocketPrice, collectionReceived, ...rest } = req.body;
@@ -48,7 +49,7 @@ const updateShopSale = async (req, res) => {
     const totalAmount = pocketCount * pocketPrice;
     const pendingAmount = totalAmount - (collectionReceived || 0);
 
-    const updatedSale = await ShopSales.findByIdAndUpdate(req.params.id, {
+    const updatedSale = await ShopSales.findOneAndUpdate({ _id: req.params.id, admin: req.admin._id }, {
       ...rest,
       pocketCount,
       pocketPrice,
@@ -65,7 +66,7 @@ const updateShopSale = async (req, res) => {
 
 const deleteShopSale = async (req, res) => {
   try {
-    const sale = await ShopSales.findById(req.params.id);
+    const sale = await ShopSales.findOne({ _id: req.params.id, admin: req.admin._id });
     if (!sale) return res.status(404).json({ message: 'Sale not found' });
     
     await sale.deleteOne();

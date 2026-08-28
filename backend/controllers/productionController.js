@@ -3,7 +3,7 @@ const { updateStockSummary } = require('../utils/stockHelper');
 
 const getProductions = async (req, res) => {
   try {
-    const productions = await Production.find().sort({ productionDate: -1 });
+    const productions = await Production.find({ admin: req.admin._id }).sort({ productionDate: -1 });
     res.json(productions);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -12,12 +12,12 @@ const getProductions = async (req, res) => {
 
 const createProduction = async (req, res) => {
   try {
-    const prod = await Production.create(req.body);
+    const prod = await Production.create({ ...req.body, admin: req.admin._id });
     
     // Business logic: Update stocks
-    await updateStockSummary('totalRiceKg', -req.body.riceUsedKg);
-    await updateStockSummary('totalPlantKg', -req.body.plantUsedKg);
-    await updateStockSummary('totalFlourKg', req.body.flourProducedKg);
+    await updateStockSummary(req.admin._id, 'totalRiceKg', -req.body.riceUsedKg);
+    await updateStockSummary(req.admin._id, 'totalPlantKg', -req.body.plantUsedKg);
+    await updateStockSummary(req.admin._id, 'totalFlourKg', req.body.flourProducedKg);
     
     res.status(201).json(prod);
   } catch (error) {
@@ -27,18 +27,18 @@ const createProduction = async (req, res) => {
 
 const updateProduction = async (req, res) => {
   try {
-    const oldProd = await Production.findById(req.params.id);
+    const oldProd = await Production.findOne({ _id: req.params.id, admin: req.admin._id });
     if (!oldProd) return res.status(404).json({ message: 'Production not found' });
 
     const diffRice = req.body.riceUsedKg - oldProd.riceUsedKg;
     const diffPlant = req.body.plantUsedKg - oldProd.plantUsedKg;
     const diffFlour = req.body.flourProducedKg - oldProd.flourProducedKg;
 
-    const updatedProd = await Production.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updatedProd = await Production.findOneAndUpdate({ _id: req.params.id, admin: req.admin._id }, req.body, { new: true });
     
-    if (diffRice !== 0) await updateStockSummary('totalRiceKg', -diffRice);
-    if (diffPlant !== 0) await updateStockSummary('totalPlantKg', -diffPlant);
-    if (diffFlour !== 0) await updateStockSummary('totalFlourKg', diffFlour);
+    if (diffRice !== 0) await updateStockSummary(req.admin._id, 'totalRiceKg', -diffRice);
+    if (diffPlant !== 0) await updateStockSummary(req.admin._id, 'totalPlantKg', -diffPlant);
+    if (diffFlour !== 0) await updateStockSummary(req.admin._id, 'totalFlourKg', diffFlour);
     
     res.json(updatedProd);
   } catch (error) {
@@ -48,13 +48,13 @@ const updateProduction = async (req, res) => {
 
 const deleteProduction = async (req, res) => {
   try {
-    const prod = await Production.findById(req.params.id);
+    const prod = await Production.findOne({ _id: req.params.id, admin: req.admin._id });
     if (!prod) return res.status(404).json({ message: 'Production not found' });
     
     // Revert stocks
-    await updateStockSummary('totalRiceKg', prod.riceUsedKg);
-    await updateStockSummary('totalPlantKg', prod.plantUsedKg);
-    await updateStockSummary('totalFlourKg', -prod.flourProducedKg);
+    await updateStockSummary(req.admin._id, 'totalRiceKg', prod.riceUsedKg);
+    await updateStockSummary(req.admin._id, 'totalPlantKg', prod.plantUsedKg);
+    await updateStockSummary(req.admin._id, 'totalFlourKg', -prod.flourProducedKg);
     
     await prod.deleteOne();
     

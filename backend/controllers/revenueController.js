@@ -14,10 +14,10 @@ const getRevenueDashboard = async (req, res) => {
 
     // Aggregate queries for totals
     const [shopSales, otherSales, expenses, stockSummary] = await Promise.all([
-      ShopSales.find(),
-      OtherSales.find(),
-      Expense.find(),
-      StockSummary.findOne()
+      ShopSales.find({ admin: req.admin._id }),
+      OtherSales.find({ admin: req.admin._id }),
+      Expense.find({ admin: req.admin._id }),
+      StockSummary.findOne({ admin: req.admin._id })
     ]);
 
     let totalShopSalesAmount = 0;
@@ -84,6 +84,7 @@ const getRevenueDashboard = async (req, res) => {
 
     // Today's flour production
     const todaysProductions = await Production.find({
+      admin: req.admin._id,
       productionDate: { $gte: today.toDate() }
     });
     let todaysFlourProduction = todaysProductions.reduce((acc, curr) => acc + curr.flourProducedKg, 0);

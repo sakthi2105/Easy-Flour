@@ -2,7 +2,7 @@ const OtherSales = require('../models/OtherSales');
 
 const getOtherSales = async (req, res) => {
   try {
-    const sales = await OtherSales.find().sort({ date: -1 });
+    const sales = await OtherSales.find({ admin: req.admin._id }).sort({ date: -1 });
     res.json(sales);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -15,6 +15,7 @@ const createOtherSale = async (req, res) => {
     const totalAmount = pocketCount * pocketPrice;
 
     const sale = await OtherSales.create({
+      admin: req.admin._id,
       ...rest,
       pocketCount,
       pocketPrice,
@@ -30,13 +31,13 @@ const createOtherSale = async (req, res) => {
 
 const updateOtherSale = async (req, res) => {
   try {
-    const oldSale = await OtherSales.findById(req.params.id);
+    const oldSale = await OtherSales.findOne({ _id: req.params.id, admin: req.admin._id });
     if (!oldSale) return res.status(404).json({ message: 'Sale not found' });
 
     let { pocketCount, pocketPrice, pendingAmount, ...rest } = req.body;
     const totalAmount = pocketCount * pocketPrice;
 
-    const updatedSale = await OtherSales.findByIdAndUpdate(req.params.id, {
+    const updatedSale = await OtherSales.findOneAndUpdate({ _id: req.params.id, admin: req.admin._id }, {
       ...rest,
       pocketCount,
       pocketPrice,
@@ -52,7 +53,7 @@ const updateOtherSale = async (req, res) => {
 
 const deleteOtherSale = async (req, res) => {
   try {
-    const sale = await OtherSales.findById(req.params.id);
+    const sale = await OtherSales.findOne({ _id: req.params.id, admin: req.admin._id });
     if (!sale) return res.status(404).json({ message: 'Sale not found' });
     
     await sale.deleteOne();

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const otherSalesSchema = mongoose.Schema({
+  admin: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Admin' },
   pocketCount: { type: Number, required: true },
   pocketPrice: { type: Number, required: true },
   totalAmount: { type: Number, required: true },

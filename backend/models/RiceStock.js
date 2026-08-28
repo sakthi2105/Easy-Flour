@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const riceStockSchema = mongoose.Schema({
+  admin: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Admin' },
   customerName: { type: String, required: true },
   riceKg: { type: Number, required: true },
   pricePerKg: { type: Number, required: true },
